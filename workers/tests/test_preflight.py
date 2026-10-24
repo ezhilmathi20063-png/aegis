@@ -1,7 +1,11 @@
 
 from pypdf import PdfWriter
 
-from workers.preflight import check_file_exists, check_pdf
+from workers.preflight import (
+    check_file_exists,
+    check_pdf,
+    get_pdf_page_rotations,
+)
 
 
 def test_missing_file_is_reported():
@@ -47,3 +51,19 @@ def test_non_pdf_is_rejected(tmp_path):
     result = check_pdf(str(sample))
     assert result["status"] == "error"
     assert result["reason"] == "not_a_pdf"
+
+def test_pdf_rotation_metadata_is_reported(tmp_path):
+    sample = tmp_path / "rotated.pdf"
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=612, height=792)
+    page.rotate(90)
+
+    with sample.open("wb") as output:
+        writer.write(output)
+
+    result = get_pdf_page_rotations(str(sample))
+
+    assert result["status"] == "checked"
+    assert result["page_rotations"] == [90]
+    assert result["rotated_pages"] == [1]
+
