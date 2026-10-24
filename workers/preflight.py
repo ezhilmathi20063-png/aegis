@@ -50,3 +50,27 @@ def check_pdf(file_path: str) -> dict:
 
     except Exception:
         return {"status": "error", "reason": "unreadable_pdf"}
+
+def get_pdf_page_rotations(file_path: str) -> dict:
+    """Report declared rotation metadata for each PDF page."""
+    basic_check = check_pdf(file_path)
+
+    if basic_check["status"] != "ready_for_ocr":
+        return basic_check
+
+    try:
+        reader = PdfReader(str(file_path))
+        rotations = [page.rotation for page in reader.pages]
+
+        return {
+            "status": "checked",
+            "page_rotations": rotations,
+            "rotated_pages": [
+                index + 1
+                for index, rotation in enumerate(rotations)
+                if rotation % 360 != 0
+            ],
+        }
+
+    except Exception:
+        return {"status": "error", "reason": "unreadable_pdf"}
